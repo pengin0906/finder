@@ -86,7 +86,7 @@ function isViewableImage(file) {
 }
 
 // === サムネイル ===
-const IMAGE_EXTS = new Set(['.jpg','.jpeg','.png','.gif','.bmp','.webp','.ico','.tiff','.tif','.avif']);
+const IMAGE_EXTS = new Set(['.jpg','.jpeg','.png','.gif','.bmp','.webp','.ico','.tiff','.tif','.avif','.svg']);
 function isImageFile(file) {
   return file.category === 'image' && IMAGE_EXTS.has((file.ext || '').toLowerCase());
 }
@@ -101,9 +101,22 @@ async function loadThumb(filePath) {
 }
 
 // サムネイルを非同期ロードするReactフック（全ファイル対応）
+// 画像ファイルは finder-media:// プロトコルで直接表示（IPC不要で確実）
 function useThumb(file) {
-  const [src, setSrc] = useState(() => thumbCache.get(file.path) || null);
+  // categoryに依存せず拡張子だけで画像判定（確実）
+  const ext = (file.ext || '').toLowerCase();
+  const isImg = IMAGE_EXTS.has(ext);
+  const [src, setSrc] = useState(() => {
+    if (thumbCache.has(file.path)) return thumbCache.get(file.path);
+    if (isImg) {
+      const mediaUrl = api.getMediaUrl(file.path);
+      thumbCache.set(file.path, mediaUrl);
+      return mediaUrl;
+    }
+    return null;
+  });
   useEffect(() => {
+    if (src) return;
     if (thumbCache.has(file.path)) { setSrc(thumbCache.get(file.path)); return; }
     loadThumb(file.path).then(url => { if (url) setSrc(url); });
   }, [file.path]);
@@ -179,7 +192,12 @@ function fileIconSvg(file) {
 // === コンポーネント ===
 function FileItem({ file, onClick, onOpen, onReveal, onFav, onDragStart }) {
   const emoji = fileEmoji(file.ext, file.category);
+  const ext = (file.ext || '').toLowerCase();
+  const isImg = IMAGE_EXTS.has(ext);
+  // 画像は finder-media:// で直接表示。その他は useThumb でサムネイル取得
+  const directSrc = isImg ? api.getMediaUrl(file.path) : null;
   const thumb = useThumb(file);
+  const imgSrc = directSrc || thumb;
 
   return (
     <div
@@ -193,8 +211,8 @@ function FileItem({ file, onClick, onOpen, onReveal, onFav, onDragStart }) {
         onDragStart?.(file);
       }}
     >
-      {thumb ? (
-        <img className="file-thumb" src={thumb} alt="" />
+      {imgSrc ? (
+        <img className="file-thumb" src={imgSrc} alt="" />
       ) : (
         <div className="file-emoji">{emoji}</div>
       )}
@@ -227,12 +245,16 @@ function EmptyState({ icon, title, desc }) {
 
 // グリッドアイテム（画像はサムネイル、その他はSVGアイコン）
 function GridItem({ file, onClick, onDoubleClick }) {
+  const ext = (file.ext || '').toLowerCase();
+  const isImg = IMAGE_EXTS.has(ext);
+  const directSrc = isImg ? api.getMediaUrl(file.path) : null;
   const thumb = useThumb(file);
+  const imgSrc = directSrc || thumb;
   return (
     <div className="visual-grid-item" onClick={onClick} onDoubleClick={onDoubleClick} title={file.name}>
       <div className="visual-grid-icon">
-        {thumb ? (
-          <img src={thumb} alt={file.name} />
+        {imgSrc ? (
+          <img src={imgSrc} alt={file.name} />
         ) : (
           <img src={fileIconSvg(file)} alt={file.name} />
         )}

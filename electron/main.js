@@ -40,7 +40,9 @@ function createWindow() {
 app.whenReady().then(async () => {
   // finder-media:// プロトコル → ローカルファイルをストリーミング配信
   protocol.handle('finder-media', (request) => {
-    const filePath = decodeURIComponent(request.url.slice('finder-media://'.length));
+    const raw = request.url.slice('finder-media://'.length);
+    const filePath = decodeURIComponent(raw);
+    console.log('[finder-media] URL:', request.url.slice(0, 80), '→ path:', filePath.slice(0, 80));
     return net.fetch(pathToFileURL(filePath).href);
   });
 
@@ -216,23 +218,29 @@ ipcMain.handle('finder:getThumbnail', async (_, fp, size) => {
     };
     const color = colors[category] || colors.other;
 
-    // 1. まずOS標準のサムネイル（画像・PDF・動画等に効く）
+    // 1. 画像ファイルはbase64で直接返す（Linux対応: nativeImageより確実）
+    const imgExts = ['.jpg','.jpeg','.png','.gif','.bmp','.webp','.ico','.tiff','.tif','.avif','.svg'];
+    if (imgExts.includes(ext)) {
+      try {
+        const stat = fs.statSync(fp);
+        if (stat.size < 5 * 1024 * 1024) { // 5MB以下
+          const buf = fs.readFileSync(fp);
+          const mimeMap = {
+            '.jpg':'image/jpeg','.jpeg':'image/jpeg','.png':'image/png','.gif':'image/gif',
+            '.bmp':'image/bmp','.webp':'image/webp','.ico':'image/x-icon',
+            '.tiff':'image/tiff','.tif':'image/tiff','.avif':'image/avif','.svg':'image/svg+xml'
+          };
+          const mime = mimeMap[ext] || 'image/png';
+          return `data:${mime};base64,${buf.toString('base64')}`;
+        }
+      } catch {}
+    }
+
+    // 2. OS標準のサムネイル（大きい画像・PDF・動画等に効く）
     try {
       const thumb = await nativeImage.createThumbnailFromPath(fp, { width: size || 120, height: size || 120 });
       if (!thumb.isEmpty()) return thumb.toDataURL();
     } catch {}
-
-    // 2. 画像はnativeImageで直接読み込み
-    const imgExts = ['.jpg','.jpeg','.png','.gif','.bmp','.webp','.ico','.tiff','.tif'];
-    if (imgExts.includes(ext)) {
-      try {
-        const img = nativeImage.createFromPath(fp);
-        if (!img.isEmpty()) {
-          const resized = img.resize({ width: size || 120, quality: 'good' });
-          return resized.toDataURL();
-        }
-      } catch {}
-    }
 
     // 3. PDF → テキスト抽出してSVG
     if (ext === '.pdf') {
