@@ -1,0 +1,1362 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ファインダー - ファイルを見つけよう</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+<style>
+/* ============================================================
+   初心者に優しいUI: 大きく、わかりやすく、あたたかく
+   ============================================================ */
+:root {
+  --bg: #FBF9F6;
+  --surface: #FFFFFF;
+  --primary: #E8750A;
+  --primary-light: #FFF3E8;
+  --primary-dark: #C45E00;
+  --text: #1A1A1A;
+  --text-secondary: #6B6B6B;
+  --text-muted: #9CA3AF;
+  --border: #E8E4DF;
+  --shadow: 0 2px 12px rgba(0,0,0,0.06);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.1);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --font: 'Noto Sans JP', -apple-system, BlinkMacSystemFont, sans-serif;
+  /* カテゴリカラー */
+  --cat-document: #3B82F6;
+  --cat-image: #EC4899;
+  --cat-video: #8B5CF6;
+  --cat-audio: #06B6D4;
+  --cat-code: #10B981;
+  --cat-archive: #F59E0B;
+  --cat-font: #6366F1;
+  --cat-data: #EF4444;
+  --cat-other: #6B7280;
+}
+
+[data-theme="dark"] {
+  --bg: #1A1A1A;
+  --surface: #252525;
+  --primary: #F59E0B;
+  --primary-light: #3D2E0A;
+  --primary-dark: #FBBF24;
+  --text: #F0F0F0;
+  --text-secondary: #A0A0A0;
+  --text-muted: #666;
+  --border: #333;
+  --shadow: 0 2px 12px rgba(0,0,0,0.3);
+  --shadow-lg: 0 8px 32px rgba(0,0,0,0.4);
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  transition: background 0.3s, color 0.3s;
+}
+
+/* === ヘッダー === */
+.header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.04);
+}
+
+.header-inner {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.logo {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--primary);
+  cursor: pointer;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.logo span { font-size: 28px; }
+
+/* === 検索バー（これが主役）=== */
+.search-wrap {
+  flex: 1;
+  max-width: 640px;
+  position: relative;
+}
+
+.search-bar {
+  width: 100%;
+  padding: 14px 20px 14px 48px;
+  font-size: 17px;
+  font-family: var(--font);
+  border: 2px solid var(--border);
+  border-radius: 50px;
+  background: var(--bg);
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.search-bar:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(232, 117, 10, 0.15);
+}
+
+.search-bar::placeholder { color: var(--text-muted); }
+
+.search-icon {
+  position: absolute;
+  left: 18px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 20px;
+  color: var(--text-muted);
+  pointer-events: none;
+}
+
+.search-clear {
+  position: absolute;
+  right: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: var(--text-muted);
+  cursor: pointer;
+  display: none;
+  padding: 4px;
+}
+
+.search-clear.visible { display: block; }
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background 0.2s;
+  color: var(--text-secondary);
+}
+
+.icon-btn:hover { background: var(--primary-light); }
+
+/* === メインコンテンツ === */
+.main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+/* === ウェルカムセクション === */
+.welcome {
+  text-align: center;
+  padding: 32px 0 24px;
+}
+
+.welcome h1 {
+  font-size: 28px;
+  font-weight: 700;
+  margin-bottom: 8px;
+}
+
+.welcome p {
+  font-size: 17px;
+  color: var(--text-secondary);
+  max-width: 500px;
+  margin: 0 auto;
+  line-height: 1.6;
+}
+
+/* === 統計カード === */
+.stats-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 14px;
+  margin-bottom: 28px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 20px;
+  text-align: center;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+  transition: transform 0.15s;
+}
+
+.stat-card:hover { transform: translateY(-2px); }
+
+.stat-icon { font-size: 32px; margin-bottom: 8px; }
+.stat-value { font-size: 26px; font-weight: 700; color: var(--primary); }
+.stat-label { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+
+/* === セクションタイトル === */
+.section-title {
+  font-size: 19px;
+  font-weight: 700;
+  margin: 28px 0 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.section-title .icon { font-size: 24px; }
+
+.section-more {
+  margin-left: auto;
+  font-size: 14px;
+  color: var(--primary);
+  cursor: pointer;
+  font-weight: 500;
+  border: none;
+  background: none;
+  font-family: var(--font);
+}
+
+.section-more:hover { text-decoration: underline; }
+
+/* === カテゴリグリッド === */
+.categories {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.cat-card {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 20px 12px;
+  text-align: center;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  border: 2px solid transparent;
+  transition: border-color 0.2s, transform 0.15s;
+}
+
+.cat-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-2px);
+}
+
+.cat-card.active { border-color: var(--primary); background: var(--primary-light); }
+
+.cat-icon { font-size: 36px; margin-bottom: 8px; }
+.cat-label { font-size: 14px; font-weight: 600; margin-bottom: 4px; }
+.cat-count { font-size: 12px; color: var(--text-secondary); }
+
+/* === ファイルリスト === */
+.file-list { display: flex; flex-direction: column; gap: 4px; }
+
+.file-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.file-item:hover {
+  border-color: var(--border);
+  background: var(--primary-light);
+}
+
+.file-emoji { font-size: 32px; flex-shrink: 0; }
+
+.file-info { flex: 1; min-width: 0; }
+
+.file-name {
+  font-size: 15px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.file-path {
+  font-size: 12px;
+  color: var(--text-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  margin-top: 2px;
+}
+
+.file-meta {
+  display: flex;
+  gap: 12px;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.file-size {
+  font-size: 13px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+}
+
+.file-time {
+  font-size: 12px;
+  color: var(--text-muted);
+  white-space: nowrap;
+  min-width: 70px;
+  text-align: right;
+}
+
+.file-actions {
+  display: flex;
+  gap: 4px;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+
+.file-item:hover .file-actions { opacity: 1; }
+
+.file-action-btn {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 6px;
+  transition: background 0.15s;
+}
+
+.file-action-btn:hover { background: rgba(0,0,0,0.06); }
+
+/* === よく使う場所 === */
+.places {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+}
+
+.place-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: var(--surface);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  border: 1px solid transparent;
+  transition: border-color 0.15s, transform 0.15s;
+}
+
+.place-card:hover {
+  border-color: var(--primary);
+  transform: translateY(-1px);
+}
+
+.place-icon { font-size: 24px; }
+.place-name { font-size: 14px; font-weight: 500; }
+
+/* === ナビゲーションタブ === */
+.nav-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 20px;
+  overflow-x: auto;
+  padding: 4px 0;
+  -webkit-overflow-scrolling: touch;
+}
+
+.nav-tab {
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  border: none;
+  background: var(--surface);
+  border-radius: 50px;
+  cursor: pointer;
+  white-space: nowrap;
+  color: var(--text-secondary);
+  font-family: var(--font);
+  transition: background 0.2s, color 0.2s;
+  box-shadow: var(--shadow);
+}
+
+.nav-tab:hover { background: var(--primary-light); color: var(--primary); }
+.nav-tab.active { background: var(--primary); color: white; }
+
+/* === パンくずリスト === */
+.breadcrumb {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+  color: var(--text-secondary);
+}
+
+.breadcrumb-item {
+  cursor: pointer;
+  color: var(--primary);
+  font-weight: 500;
+  padding: 2px 6px;
+  border-radius: 4px;
+}
+
+.breadcrumb-item:hover { background: var(--primary-light); }
+.breadcrumb-sep { color: var(--text-muted); }
+
+/* === 空の状態 === */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-secondary);
+}
+
+.empty-state .icon { font-size: 64px; margin-bottom: 16px; }
+.empty-state h3 { font-size: 20px; font-weight: 600; margin-bottom: 8px; }
+.empty-state p { font-size: 15px; line-height: 1.6; }
+
+/* === インデックス進捗 === */
+.indexing-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  padding: 12px 24px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  z-index: 100;
+  box-shadow: 0 -2px 8px rgba(0,0,0,0.05);
+}
+
+.indexing-bar.hidden { display: none; }
+
+.indexing-spinner {
+  width: 20px;
+  height: 20px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.indexing-text { font-size: 14px; color: var(--text-secondary); }
+.indexing-count { font-weight: 600; color: var(--primary); }
+
+/* === モーダル/ダイアログ === */
+.modal-overlay {
+  position: fixed;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background: rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 200;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s;
+}
+
+.modal-overlay.visible { opacity: 1; pointer-events: all; }
+
+.modal {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 28px;
+  max-width: 520px;
+  width: 90%;
+  max-height: 80vh;
+  overflow-y: auto;
+  box-shadow: var(--shadow-lg);
+  transform: translateY(10px);
+  transition: transform 0.2s;
+}
+
+.modal-overlay.visible .modal { transform: translateY(0); }
+
+.modal h2 { font-size: 20px; margin-bottom: 16px; }
+
+.modal-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: none;
+  border: none;
+  font-size: 24px;
+  cursor: pointer;
+  color: var(--text-muted);
+}
+
+/* === ファイル詳細 === */
+.detail-row {
+  display: flex;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+  font-size: 14px;
+}
+
+.detail-label {
+  width: 100px;
+  color: var(--text-secondary);
+  flex-shrink: 0;
+  font-weight: 500;
+}
+
+.detail-value {
+  flex: 1;
+  word-break: break-all;
+}
+
+.btn {
+  padding: 10px 24px;
+  font-size: 15px;
+  font-family: var(--font);
+  font-weight: 500;
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  transition: background 0.2s, transform 0.1s;
+}
+
+.btn:active { transform: scale(0.97); }
+
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { background: var(--primary-dark); }
+
+.btn-outline {
+  background: transparent;
+  border: 2px solid var(--border);
+  color: var(--text-secondary);
+}
+.btn-outline:hover { border-color: var(--primary); color: var(--primary); }
+
+.btn-row { display: flex; gap: 10px; margin-top: 20px; }
+
+/* === 重複ファイルグループ === */
+.dup-group {
+  background: var(--surface);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 12px;
+  box-shadow: var(--shadow);
+  border: 1px solid var(--border);
+}
+
+.dup-header {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.dup-badge {
+  background: #FEE2E2;
+  color: #DC2626;
+  padding: 2px 10px;
+  border-radius: 50px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* === レスポンシブ === */
+@media (max-width: 768px) {
+  .header-inner { gap: 10px; }
+  .logo { font-size: 18px; }
+  .logo span { font-size: 22px; }
+  .search-bar { font-size: 15px; padding: 12px 16px 12px 42px; }
+  .main { padding: 16px; }
+  .welcome h1 { font-size: 22px; }
+  .welcome p { font-size: 15px; }
+  .categories { grid-template-columns: repeat(auto-fill, minmax(100px, 1fr)); }
+  .cat-card { padding: 14px 8px; }
+  .cat-icon { font-size: 28px; }
+  .stat-card { padding: 14px; }
+  .stat-value { font-size: 20px; }
+  .file-item { padding: 12px 14px; gap: 10px; }
+  .file-meta { display: none; }
+  .file-actions { opacity: 1; }
+}
+
+/* === スクロールバー === */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+
+/* === アニメーション === */
+.fade-in {
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* === ツールチップ === */
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]:hover::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 6px 12px;
+  background: var(--text);
+  color: var(--bg);
+  font-size: 12px;
+  border-radius: 6px;
+  white-space: nowrap;
+  pointer-events: none;
+  z-index: 10;
+}
+</style>
+</head>
+<body>
+<!-- ヘッダー -->
+<header class="header">
+  <div class="header-inner">
+    <div class="logo" onclick="navigate('home')">
+      <span>📂</span>ファインダー
+    </div>
+    <div class="search-wrap">
+      <div class="search-icon">🔍</div>
+      <input type="text" class="search-bar" id="searchInput"
+        placeholder="ファイルを探す... 名前やキーワードを入力" autofocus>
+      <button class="search-clear" id="searchClear" onclick="clearSearch()">✕</button>
+    </div>
+    <div class="header-actions">
+      <button class="icon-btn" data-tooltip="再インデックス" onclick="reindex()">🔄</button>
+      <button class="icon-btn" data-tooltip="テーマ切替" onclick="toggleTheme()">🌙</button>
+    </div>
+  </div>
+</header>
+
+<!-- メイン -->
+<div class="main" id="app">
+  <!-- ロード中 -->
+  <div id="loading" class="empty-state">
+    <div class="indexing-spinner" style="width:48px;height:48px;margin:0 auto 16px;border-width:4px"></div>
+    <h3>準備中...</h3>
+    <p>ファイルを読み込んでいます</p>
+  </div>
+</div>
+
+<!-- インデックス進捗バー -->
+<div class="indexing-bar hidden" id="indexingBar">
+  <div class="indexing-spinner"></div>
+  <span class="indexing-text">
+    ファイルを読み取り中...
+    <span class="indexing-count" id="indexingCount">0</span> 件処理済み
+  </span>
+</div>
+
+<!-- ファイル詳細モーダル -->
+<div class="modal-overlay" id="detailModal">
+  <div class="modal" id="detailContent"></div>
+</div>
+
+<script>
+// ============================================================
+// ファインダー フロントエンド
+// sfa のSPAパターン: 状態管理 + 動的レンダリング
+// ============================================================
+
+const $ = (sel) => document.querySelector(sel);
+const $$ = (sel) => document.querySelectorAll(sel);
+const app = $('#app');
+
+// === 状態 ===
+const state = {
+  view: 'home', // home, search, category, browse, duplicates, large, favorites
+  stats: null,
+  recent: [],
+  places: [],
+  searchQuery: '',
+  searchResults: [],
+  categoryFiles: [],
+  currentCategory: '',
+  browseData: null,
+  duplicates: [],
+  largeFiles: [],
+  favorites: [],
+  indexState: { running: false }
+};
+
+// === API ===
+const api = {
+  async get(url) {
+    const res = await fetch(url);
+    return res.json();
+  },
+  async post(url, body) {
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    return res.json();
+  },
+  async del(url, body) {
+    const res = await fetch(url, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+    return res.json();
+  }
+};
+
+// === ユーティリティ ===
+function formatSize(bytes) {
+  if (!bytes || bytes === 0) return '0 B';
+  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  return (bytes / Math.pow(1024, i)).toFixed(i > 0 ? 1 : 0) + ' ' + units[i];
+}
+
+function formatTime(dateStr) {
+  if (!dateStr) return '';
+  const date = new Date(dateStr.replace(' ', 'T'));
+  const now = new Date();
+  const diff = (now - date) / 1000;
+
+  if (diff < 60) return 'たった今';
+  if (diff < 3600) return Math.floor(diff / 60) + '分前';
+  if (diff < 86400) return Math.floor(diff / 3600) + '時間前';
+  if (diff < 172800) return '昨日';
+  if (diff < 604800) return Math.floor(diff / 86400) + '日前';
+  if (diff < 2592000) return Math.floor(diff / 604800) + '週間前';
+
+  return date.toLocaleDateString('ja-JP', { month: 'short', day: 'numeric' });
+}
+
+function fileEmoji(ext, category) {
+  const emojiMap = {
+    '.pdf': '📕', '.doc': '📘', '.docx': '📘', '.xls': '📊', '.xlsx': '📊',
+    '.ppt': '📙', '.pptx': '📙', '.txt': '📝', '.md': '📝', '.csv': '📊',
+    '.jpg': '🖼️', '.jpeg': '🖼️', '.png': '🖼️', '.gif': '🎞️', '.svg': '🎨',
+    '.webp': '🖼️', '.heic': '📷', '.psd': '🎨',
+    '.mp4': '🎬', '.mov': '🎬', '.avi': '📹', '.mkv': '🎬', '.webm': '📹',
+    '.mp3': '🎵', '.wav': '🎶', '.flac': '🎵', '.aac': '🎵', '.m4a': '🎵',
+    '.js': '⚡', '.ts': '💎', '.py': '🐍', '.rb': '💎', '.go': '🔵',
+    '.java': '☕', '.c': '⚙️', '.cpp': '⚙️', '.rs': '🦀', '.swift': '🐦',
+    '.html': '🌐', '.css': '🎨', '.json': '📋', '.yaml': '📋', '.yml': '📋',
+    '.sh': '🖥️', '.sql': '🗄️',
+    '.zip': '📦', '.tar': '📦', '.gz': '📦', '.7z': '📦', '.rar': '📦',
+    '.dmg': '💿', '.iso': '💿',
+    '.ttf': '🔤', '.otf': '🔤', '.woff': '🔤',
+    '.db': '🗃️', '.sqlite': '🗃️',
+    '.epub': '📚', '.mobi': '📚',
+  };
+  const lower = (ext || '').toLowerCase();
+  if (emojiMap[lower]) return emojiMap[lower];
+
+  const catEmoji = {
+    document: '📄', image: '🖼️', video: '🎬', audio: '🎵',
+    code: '💻', archive: '📦', font: '🔤', data: '🗃️', other: '📁'
+  };
+  return catEmoji[category] || '📁';
+}
+
+function catColor(category) {
+  return getComputedStyle(document.documentElement)
+    .getPropertyValue(`--cat-${category}`)?.trim() || '#6B7280';
+}
+
+function shortenPath(p, maxLen = 50) {
+  if (!p) return '';
+  const home = p.replace(/^\/Users\/[^/]+/, '~').replace(/^\/home\/[^/]+/, '~');
+  if (home.length <= maxLen) return home;
+  const parts = home.split('/');
+  if (parts.length <= 3) return home;
+  return parts[0] + '/.../' + parts.slice(-2).join('/');
+}
+
+function debounce(fn, ms) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
+}
+
+// === ナビゲーション ===
+function navigate(view, data) {
+  state.view = view;
+  if (data) Object.assign(state, data);
+  render();
+  window.scrollTo(0, 0);
+}
+
+// === レンダリング ===
+function render() {
+  switch (state.view) {
+    case 'home': renderHome(); break;
+    case 'search': renderSearch(); break;
+    case 'category': renderCategory(); break;
+    case 'browse': renderBrowse(); break;
+    case 'duplicates': renderDuplicates(); break;
+    case 'large': renderLarge(); break;
+    case 'favorites': renderFavorites(); break;
+    default: renderHome();
+  }
+}
+
+function renderHome() {
+  const s = state.stats;
+  if (!s) { app.innerHTML = loadingHTML(); return; }
+
+  app.innerHTML = `
+    <div class="fade-in">
+      <div class="welcome">
+        <h1>ファイルを見つけよう</h1>
+        <p>上の検索バーにキーワードを入れるだけ。<br>名前の一部でも大丈夫です。</p>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card">
+          <div class="stat-icon">📊</div>
+          <div class="stat-value">${(s.total_files || 0).toLocaleString()}</div>
+          <div class="stat-label">ファイル数</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">💾</div>
+          <div class="stat-value">${formatSize(s.total_size)}</div>
+          <div class="stat-label">合計サイズ</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon">📁</div>
+          <div class="stat-value">${(s.total_dirs || 0).toLocaleString()}</div>
+          <div class="stat-label">フォルダ数</div>
+        </div>
+        <div class="stat-card" style="cursor:pointer" onclick="showDuplicates()">
+          <div class="stat-icon">🔍</div>
+          <div class="stat-value">チェック</div>
+          <div class="stat-label">重複ファイル</div>
+        </div>
+      </div>
+
+      <div class="section-title">
+        <span class="icon">📁</span>カテゴリ別に探す
+      </div>
+      <div class="categories">
+        ${(s.categories || []).map(c => `
+          <div class="cat-card" onclick="showCategory('${c.category}')">
+            <div class="cat-icon">${c.icon}</div>
+            <div class="cat-label">${c.label}</div>
+            <div class="cat-count">${c.count.toLocaleString()} 件</div>
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="section-title">
+        <span class="icon">📍</span>よく使う場所
+      </div>
+      <div class="places">
+        ${state.places.map(p => `
+          <div class="place-card" onclick="browseTo('${esc(p.path)}')">
+            <span class="place-icon">${p.icon}</span>
+            <span class="place-name">${p.name}</span>
+          </div>
+        `).join('')}
+      </div>
+
+      <div class="section-title">
+        <span class="icon">🕐</span>最近使ったファイル
+        <button class="section-more" onclick="showCategory('all')">もっと見る →</button>
+      </div>
+      <div class="file-list">
+        ${state.recent.map(f => fileItemHTML(f)).join('')}
+        ${state.recent.length === 0 ? emptyHTML('📂', 'まだファイルがありません', 'インデックスが完了するまでお待ちください') : ''}
+      </div>
+
+      <div style="margin-top:24px">
+        <div class="nav-tabs">
+          <button class="nav-tab" onclick="showLargeFiles()">📦 大きいファイル</button>
+          <button class="nav-tab" onclick="showDuplicates()">🔗 重複ファイル</button>
+          <button class="nav-tab" onclick="showFavorites()">⭐ お気に入り</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function renderSearch() {
+  const results = state.searchResults;
+  app.innerHTML = `
+    <div class="fade-in">
+      <div class="nav-tabs">
+        <button class="nav-tab active">🔍 検索結果</button>
+        <button class="nav-tab" onclick="navigate('home')">🏠 ホーム</button>
+      </div>
+      <p style="color:var(--text-secondary);margin-bottom:16px;font-size:14px">
+        「${esc(state.searchQuery)}」の検索結果: ${results.length} 件
+      </p>
+      <div class="file-list">
+        ${results.map(f => fileItemHTML(f)).join('')}
+        ${results.length === 0 ? emptyHTML('🔍', '見つかりませんでした',
+          'キーワードを変えてみてください。<br>ファイル名の一部でも検索できます。') : ''}
+      </div>
+    </div>
+  `;
+}
+
+function renderCategory() {
+  const catInfo = {
+    document: { label: '文書', icon: '📄' },
+    image: { label: '画像', icon: '🖼️' },
+    video: { label: '動画', icon: '🎬' },
+    audio: { label: '音楽', icon: '🎵' },
+    code: { label: 'コード', icon: '💻' },
+    archive: { label: '圧縮ファイル', icon: '📦' },
+    font: { label: 'フォント', icon: '🔤' },
+    data: { label: 'データ', icon: '🗃️' },
+    other: { label: 'その他', icon: '📁' },
+    all: { label: '全てのファイル', icon: '📊' }
+  };
+  const info = catInfo[state.currentCategory] || catInfo.other;
+
+  app.innerHTML = `
+    <div class="fade-in">
+      <div class="nav-tabs">
+        <button class="nav-tab" onclick="navigate('home')">🏠 ホーム</button>
+        <button class="nav-tab active">${info.icon} ${info.label}</button>
+      </div>
+      <div class="file-list">
+        ${state.categoryFiles.map(f => fileItemHTML(f)).join('')}
+        ${state.categoryFiles.length === 0 ? emptyHTML(info.icon, 'ファイルがありません', 'このカテゴリにはまだファイルがありません') : ''}
+      </div>
+    </div>
+  `;
+}
+
+function renderBrowse() {
+  const data = state.browseData;
+  if (!data) return;
+
+  const parts = data.dir.split('/').filter(Boolean);
+  let breadcrumb = '';
+  let cumPath = '';
+  parts.forEach((p, i) => {
+    cumPath += '/' + p;
+    const cp = cumPath;
+    breadcrumb += `<span class="breadcrumb-item" onclick="browseTo('${esc(cp)}')">${esc(p)}</span>`;
+    if (i < parts.length - 1) breadcrumb += `<span class="breadcrumb-sep">/</span>`;
+  });
+
+  app.innerHTML = `
+    <div class="fade-in">
+      <div class="nav-tabs">
+        <button class="nav-tab" onclick="navigate('home')">🏠 ホーム</button>
+        <button class="nav-tab active">📂 フォルダ</button>
+        ${data.parent !== data.dir ? `<button class="nav-tab" onclick="browseTo('${esc(data.parent)}')">⬆️ 上のフォルダ</button>` : ''}
+      </div>
+      <div class="breadcrumb">${breadcrumb}</div>
+      <div class="file-list">
+        ${data.subdirs.map(d => `
+          <div class="file-item" onclick="browseTo('${esc(d.path)}')">
+            <div class="file-emoji" style="font-size:28px">📁</div>
+            <div class="file-info">
+              <div class="file-name">${esc(d.name)}</div>
+            </div>
+          </div>
+        `).join('')}
+        ${data.files.map(f => fileItemHTML(f)).join('')}
+        ${data.subdirs.length === 0 && data.files.length === 0 ?
+          emptyHTML('📂', '空のフォルダ', 'このフォルダにはファイルがありません') : ''}
+      </div>
+    </div>
+  `;
+}
+
+function renderDuplicates() {
+  app.innerHTML = `
+    <div class="fade-in">
+      <div class="nav-tabs">
+        <button class="nav-tab" onclick="navigate('home')">🏠 ホーム</button>
+        <button class="nav-tab active">🔗 重複ファイル</button>
+      </div>
+      <p style="color:var(--text-secondary);margin-bottom:16px;font-size:14px">
+        同じ内容のファイルが複数の場所にあります
+      </p>
+      ${state.duplicates.map(d => {
+        const paths = d.paths.split('|||');
+        return `
+          <div class="dup-group">
+            <div class="dup-header">
+              <span class="dup-badge">${d.cnt} 個の重複</span>
+              <span>${formatSize(d.size)} × ${d.cnt}</span>
+            </div>
+            <div class="file-list">
+              ${paths.map(p => `
+                <div class="file-item" onclick="showFileDetail('${esc(p)}')">
+                  <div class="file-emoji">${fileEmoji(getExt(p))}</div>
+                  <div class="file-info">
+                    <div class="file-name">${esc(getFileName(p))}</div>
+                    <div class="file-path">${shortenPath(p)}</div>
+                  </div>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+        `;
+      }).join('')}
+      ${state.duplicates.length === 0 ?
+        emptyHTML('🔗', '重複ファイルはありません', 'すべてのファイルがユニークです！') : ''}
+    </div>
+  `;
+}
+
+function renderLarge() {
+  app.innerHTML = `
+    <div class="fade-in">
+      <div class="nav-tabs">
+        <button class="nav-tab" onclick="navigate('home')">🏠 ホーム</button>
+        <button class="nav-tab active">📦 大きいファイル</button>
+      </div>
+      <p style="color:var(--text-secondary);margin-bottom:16px;font-size:14px">
+        サイズが大きいファイル順に表示しています
+      </p>
+      <div class="file-list">
+        ${state.largeFiles.map(f => fileItemHTML(f)).join('')}
+      </div>
+    </div>
+  `;
+}
+
+function renderFavorites() {
+  app.innerHTML = `
+    <div class="fade-in">
+      <div class="nav-tabs">
+        <button class="nav-tab" onclick="navigate('home')">🏠 ホーム</button>
+        <button class="nav-tab active">⭐ お気に入り</button>
+      </div>
+      <div class="file-list">
+        ${state.favorites.map(f => fileItemHTML(f)).join('')}
+        ${state.favorites.length === 0 ?
+          emptyHTML('⭐', 'お気に入りがありません',
+            'ファイルの横にある ☆ をクリックするとお気に入りに追加できます') : ''}
+      </div>
+    </div>
+  `;
+}
+
+// === HTMLヘルパー ===
+function fileItemHTML(f) {
+  const emoji = fileEmoji(f.ext, f.category);
+  return `
+    <div class="file-item" ondblclick="openFile('${esc(f.path)}')" onclick="showFileDetail('${esc(f.path)}')">
+      <div class="file-emoji">${emoji}</div>
+      <div class="file-info">
+        <div class="file-name">${esc(f.name)}</div>
+        <div class="file-path">${shortenPath(f.dir || f.path)}</div>
+      </div>
+      <div class="file-meta">
+        <span class="file-size">${formatSize(f.size)}</span>
+        <span class="file-time">${formatTime(f.modified_at)}</span>
+      </div>
+      <div class="file-actions">
+        <button class="file-action-btn" data-tooltip="開く" onclick="event.stopPropagation();openFile('${esc(f.path)}')">📂</button>
+        <button class="file-action-btn" data-tooltip="場所を表示" onclick="event.stopPropagation();revealFile('${esc(f.path)}')">📍</button>
+        <button class="file-action-btn" data-tooltip="お気に入り" onclick="event.stopPropagation();toggleFav('${esc(f.path)}')">☆</button>
+      </div>
+    </div>
+  `;
+}
+
+function emptyHTML(icon, title, desc) {
+  return `
+    <div class="empty-state">
+      <div class="icon">${icon}</div>
+      <h3>${title}</h3>
+      <p>${desc}</p>
+    </div>
+  `;
+}
+
+function loadingHTML() {
+  return `
+    <div class="empty-state">
+      <div class="indexing-spinner" style="width:48px;height:48px;margin:0 auto 16px;border-width:4px"></div>
+      <h3>読み込み中...</h3>
+    </div>
+  `;
+}
+
+function esc(str) {
+  if (!str) return '';
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;').replace(/'/g,'&#39;');
+}
+
+function getExt(p) { return '.' + (p.split('.').pop() || ''); }
+function getFileName(p) { return p.split('/').pop() || p; }
+
+// === アクション ===
+async function showCategory(name) {
+  state.currentCategory = name;
+  if (name === 'all') {
+    state.categoryFiles = await api.get('/api/recent?limit=100');
+  } else {
+    state.categoryFiles = await api.get(`/api/category/${name}?limit=100`);
+  }
+  navigate('category');
+}
+
+async function browseTo(dirPath) {
+  state.browseData = await api.get(`/api/browse?path=${encodeURIComponent(dirPath)}`);
+  navigate('browse');
+}
+
+async function showDuplicates() {
+  // まずハッシュ計算をトリガー
+  await api.post('/api/compute-hashes');
+  state.duplicates = await api.get('/api/duplicates');
+  navigate('duplicates');
+}
+
+async function showLargeFiles() {
+  state.largeFiles = await api.get('/api/large?limit=50');
+  navigate('large');
+}
+
+async function showFavorites() {
+  state.favorites = await api.get('/api/favorites');
+  navigate('favorites');
+}
+
+async function openFile(filePath) {
+  await api.post('/api/open', { path: filePath });
+}
+
+async function revealFile(filePath) {
+  await api.post('/api/reveal', { path: filePath });
+}
+
+async function toggleFav(filePath) {
+  // シンプルにトグル：一旦追加を試みる
+  await api.post('/api/favorites', { path: filePath });
+}
+
+async function showFileDetail(filePath) {
+  const file = await api.get(`/api/file?path=${encodeURIComponent(filePath)}`);
+  if (!file || file.error) return;
+
+  const modal = $('#detailModal');
+  const content = $('#detailContent');
+
+  content.innerHTML = `
+    <div style="text-align:center;margin-bottom:20px">
+      <div style="font-size:56px">${fileEmoji(file.ext, file.category)}</div>
+      <h2 style="margin-top:8px;word-break:break-all">${esc(file.name)}</h2>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">場所</span>
+      <span class="detail-value" style="cursor:pointer;color:var(--primary)"
+        onclick="$('#detailModal').classList.remove('visible');browseTo('${esc(file.dir)}')">${shortenPath(file.dir, 80)}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">フルパス</span>
+      <span class="detail-value" style="font-size:12px;color:var(--text-muted)">${esc(file.path)}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">サイズ</span>
+      <span class="detail-value">${formatSize(file.size)}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">種類</span>
+      <span class="detail-value">${esc(file.mime_type || file.ext || '不明')}</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">更新日時</span>
+      <span class="detail-value">${file.modified_at || '不明'} (${formatTime(file.modified_at)})</span>
+    </div>
+    <div class="detail-row">
+      <span class="detail-label">作成日時</span>
+      <span class="detail-value">${file.created_at || '不明'}</span>
+    </div>
+    <div class="btn-row" style="justify-content:center">
+      <button class="btn btn-primary" onclick="openFile('${esc(file.path)}')">📂 ファイルを開く</button>
+      <button class="btn btn-outline" onclick="revealFile('${esc(file.path)}')">📍 場所を表示</button>
+      <button class="btn btn-outline" onclick="toggleFav('${esc(file.path)}')">
+        ${file.isFavorite ? '★ お気に入り解除' : '☆ お気に入り'}
+      </button>
+    </div>
+    <div style="text-align:center;margin-top:16px">
+      <button class="btn btn-outline" onclick="$('#detailModal').classList.remove('visible')"
+        style="font-size:13px;padding:8px 20px">閉じる</button>
+    </div>
+  `;
+
+  modal.classList.add('visible');
+}
+
+function clearSearch() {
+  const input = $('#searchInput');
+  input.value = '';
+  $('#searchClear').classList.remove('visible');
+  state.searchQuery = '';
+  navigate('home');
+  input.focus();
+}
+
+async function reindex() {
+  $('#indexingBar').classList.remove('hidden');
+  await api.post('/api/index');
+  await loadInitialData();
+  render();
+  setTimeout(() => $('#indexingBar').classList.add('hidden'), 1000);
+}
+
+function toggleTheme() {
+  const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  document.documentElement.setAttribute('data-theme', isDark ? '' : 'dark');
+  localStorage.setItem('theme', isDark ? 'light' : 'dark');
+}
+
+// === 検索 ===
+const doSearch = debounce(async (query) => {
+  if (!query.trim()) {
+    state.searchQuery = '';
+    navigate('home');
+    return;
+  }
+  state.searchQuery = query;
+  state.searchResults = await api.get(`/api/search?q=${encodeURIComponent(query)}`);
+  navigate('search');
+}, 250);
+
+$('#searchInput').addEventListener('input', (e) => {
+  const v = e.target.value;
+  $('#searchClear').classList.toggle('visible', v.length > 0);
+  doSearch(v);
+});
+
+$('#searchInput').addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') clearSearch();
+});
+
+// モーダル外クリックで閉じる
+$('#detailModal').addEventListener('click', (e) => {
+  if (e.target === $('#detailModal')) {
+    $('#detailModal').classList.remove('visible');
+  }
+});
+
+// キーボードショートカット
+document.addEventListener('keydown', (e) => {
+  // Cmd/Ctrl+K で検索にフォーカス
+  if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+    e.preventDefault();
+    $('#searchInput').focus();
+    $('#searchInput').select();
+  }
+  // Escでモーダル閉じる
+  if (e.key === 'Escape') {
+    $('#detailModal').classList.remove('visible');
+  }
+});
+
+// === SSE リアルタイム更新 ===
+function connectSSE() {
+  const es = new EventSource('/api/events');
+  es.onmessage = (e) => {
+    try {
+      const data = JSON.parse(e.data);
+      if (data.type === 'progress') {
+        $('#indexingBar').classList.remove('hidden');
+        $('#indexingCount').textContent = (data.progress || 0).toLocaleString();
+      }
+      if (data.type === 'done') {
+        setTimeout(async () => {
+          $('#indexingBar').classList.add('hidden');
+          await loadInitialData();
+          if (state.view === 'home') render();
+        }, 500);
+      }
+      if (['file-added', 'file-changed', 'file-deleted'].includes(data.type)) {
+        // リアルタイム更新は定期的にダッシュボードをリフレッシュ
+        debouncedRefresh();
+      }
+    } catch {}
+  };
+  es.onerror = () => {
+    es.close();
+    setTimeout(connectSSE, 5000);
+  };
+}
+
+const debouncedRefresh = debounce(async () => {
+  if (state.view === 'home') {
+    await loadInitialData();
+    render();
+  }
+}, 3000);
+
+// === 初期化 ===
+async function loadInitialData() {
+  const [stats, recent, places] = await Promise.all([
+    api.get('/api/stats'),
+    api.get('/api/recent?limit=20'),
+    api.get('/api/places')
+  ]);
+  state.stats = stats;
+  state.recent = recent;
+  state.places = places;
+  state.indexState = stats.indexState || { running: false };
+
+  if (state.indexState.running) {
+    $('#indexingBar').classList.remove('hidden');
+    $('#indexingCount').textContent = (state.indexState.progress || 0).toLocaleString();
+  }
+}
+
+async function init() {
+  // テーマ復元
+  const saved = localStorage.getItem('theme');
+  if (saved === 'dark') document.documentElement.setAttribute('data-theme', 'dark');
+
+  await loadInitialData();
+  render();
+  connectSSE();
+}
+
+init();
+</script>
+</body>
+</html>

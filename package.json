@@ -1,0 +1,25 @@
+{
+  "name": "finder",
+  "version": "2.0.0",
+  "description": "初心者に優しいスマートファイルファインダー - ネイティブデスクトップアプリ",
+  "main": "dist-electron/main.js",
+  "scripts": {
+    "dev": "unset ELECTRON_RUN_AS_NODE && vite",
+    "build": "unset ELECTRON_RUN_AS_NODE && vite build",
+    "start": "unset ELECTRON_RUN_AS_NODE && npx electron ."
+  },
+  "dependencies": {
+    "chokidar": "^3.6.0",
+    "mime-types": "^2.1.35"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "electron": "^33.2.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1",
+    "vite": "^5.4.11",
+    "vite-plugin-electron": "^0.28.8",
+    "vue": "^3.5.13"
+  }
+}
