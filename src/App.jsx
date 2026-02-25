@@ -307,11 +307,11 @@ function MediaPlayer({ file, onClose, onOpen, onReveal, onPrev, onNext, hasPrev,
             <span>{formatTime(file.modified_at)}</span>
           </div>
           <div className="media-actions">
-            {hasPrev && <button className="btn btn-outline" onClick={onPrev}>← 前へ</button>}
+            <button className="btn btn-outline" onClick={onPrev} style={{ visibility: hasPrev ? 'visible' : 'hidden' }}>← 前へ</button>
             <button className="btn btn-outline" onClick={() => onOpen?.(file.path)}>📂 開く</button>
             <button className="btn btn-outline" onClick={() => onReveal?.(file.path)}>📍 場所</button>
             <button className="btn btn-outline" onClick={onClose}>✕ 閉じる</button>
-            {hasNext && <button className="btn btn-primary media-next-btn" onClick={onNext}>次へ →</button>}
+            <button className="btn btn-primary media-next-btn" onClick={onNext} style={{ visibility: hasNext ? 'visible' : 'hidden' }}>次へ →</button>
           </div>
         </div>
       </div>

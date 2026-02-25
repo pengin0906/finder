@@ -661,7 +661,6 @@ body::after {
   align-items: center;
   justify-content: center;
   z-index: 200;
-  animation: fadeIn 0.2s ease;
 }
 .modal {
   background: var(--surface-solid);
@@ -829,7 +828,6 @@ body::after {
   align-items: center;
   max-width: 90vw;
   max-height: 90vh;
-  animation: fadeIn 0.25s ease;
 }
 .media-video {
   max-width: 90vw;
@@ -893,10 +891,14 @@ body::after {
   font-weight: 500;
 }
 .media-actions {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
   display: flex;
   gap: 8px;
   justify-content: center;
-  flex-wrap: wrap;
+  z-index: 211;
 }
 .media-actions .btn-outline {
   color: rgba(255,255,255,0.8);
