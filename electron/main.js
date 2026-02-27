@@ -7,6 +7,9 @@ const { execSync, exec } = require('child_process');
 const { FileKVS } = require('../lib/kvs');
 const indexer = require('../lib/indexer');
 
+app.commandLine.appendSwitch('disable-gpu');
+app.commandLine.appendSwitch('disable-software-rasterizer');
+
 let mainWindow;
 let kvs;
 
